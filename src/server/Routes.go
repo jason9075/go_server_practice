@@ -55,6 +55,12 @@ var routes = Routes{
 		ReadAllPerson,
 	},
 	Route{
+		"Count",
+		"GET",
+		"/count",
+		CountAllPerson,
+	},
+	Route{
 		"Update",
 		"POST",
 		"/update",

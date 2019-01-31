@@ -13,6 +13,7 @@ const DomainName string = "http://localhost:8080/"
 
 const APICreate string = DomainName + "create"
 const APIRead string = DomainName + "read"
+const APICount string = DomainName + "count"
 const APIUpdate string = DomainName + "update"
 const APIDelete string = DomainName + "delete"
 
@@ -25,6 +26,10 @@ func main() {
 	requestRead(personID)
 	requestDump()
 	requestDelete(personID)
+
+	// Goroutine
+	fmt.Println("## Goroutine ##")
+	requestCount()
 
 }
 
@@ -65,6 +70,19 @@ func requestDump() error {
 	data, _ := ioutil.ReadAll(response.Body)
 	println("Dump: " + string(data))
 	return nil
+}
+
+func requestCount() (int, error) {
+	response, err := http.Get(APICount)
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+		return 0, errors.New("Request fail")
+	}
+	data, _ := ioutil.ReadAll(response.Body)
+	result := make(map[string]interface{})
+	err = json.Unmarshal(data, &result)
+	fmt.Printf("Count: %d\n", int(result["msg"].(float64)))
+	return int(result["msg"].(float64)), nil
 }
 
 func requestUpdate(pID string, name string, age int, gender string) error {

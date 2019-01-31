@@ -52,6 +52,16 @@ func ReadAllPerson(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func CountAllPerson(w http.ResponseWriter, r *http.Request) {
+	db := GetDb()
+	persons := db.ReadAll()
+
+	var res = map[string]interface{}{"status": "success!", "msg": len(persons)}
+	response, _ := json.Marshal(res)
+	w.Write(response)
+
+}
+
 func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	payload := make(map[string]interface{})
 	err := json.NewDecoder(r.Body).Decode(&payload)
