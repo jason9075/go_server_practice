@@ -73,6 +73,12 @@ var routes = Routes{
 		DeletePerson,
 	},
 	Route{
+		"DeleteAll",
+		"GET",
+		"/clear",
+		DeleteAllPerson,
+	},
+	Route{
 		"Error",
 		"GET",
 		"/error",

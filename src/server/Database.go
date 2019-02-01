@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"sync"
+	"sync/atomic"
 
 	uuid "github.com/nu7hatch/gouuid"
 )
@@ -11,17 +13,30 @@ type database struct {
 }
 
 var instance *database
+var mu sync.Mutex
+var initialized uint32
 
 func GetDb() *database {
-	if instance == nil {
-		instance = &database{make(map[string]Person, 1000)}
+	if atomic.LoadUint32(&initialized) == 1 {
+		return instance
 	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if initialized == 0 {
+		instance = &database{make(map[string]Person, 1000)}
+		atomic.StoreUint32(&initialized, 1)
+	}
+
 	return instance
 }
 
 func (db *database) Insert(p Person) string {
 	pid, _ := uuid.NewV4()
 	p.ID = pid.String()
+	mu.Lock()
+	defer mu.Unlock()
 	db.personMap[pid.String()] = p
 	return pid.String()
 }
@@ -58,6 +73,10 @@ func (db *database) Delete(pid string) bool {
 		return true
 	}
 	return false
+}
+
+func (db *database) DeleteAll() {
+	db.personMap = make(map[string]Person, 1000)
 }
 
 func (db *database) PrintAll() {

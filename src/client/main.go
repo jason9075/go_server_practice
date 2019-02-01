@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 const DomainName string = "http://localhost:8080/"
@@ -16,42 +17,62 @@ const APIRead string = DomainName + "read"
 const APICount string = DomainName + "count"
 const APIUpdate string = DomainName + "update"
 const APIDelete string = DomainName + "delete"
+const APIDeleteAll string = DomainName + "clear"
 
 func main() {
 	// Basic CRUD
 	fmt.Println("## Basic CRUD ##")
-	personID, _ := requestCreate("Jason", 25, "m")
+	personID, _ := requestCreate("Jason", 25, "m", true)
 	requestRead(personID)
 	requestUpdate(personID, "Jason_edit", 27, "m")
 	requestRead(personID)
 	requestDump()
 	requestDelete(personID)
 
+	total := 5000
+
+	// For loop request
+	start := time.Now()
+
+	for i := 0; i < total; i++ {
+		_, _ = requestCreate("Jason", i, "m", false)
+	}
+
+	elapsed := time.Since(start)
+	fmt.Printf("for-loop %d requests took %s\n", total, elapsed)
+
+	requestDeleteAll()
+
 	// Goroutine
 	fmt.Println("## Goroutine ##")
-	requests := make(chan string)
 
-	total := 5
+	batchSize := 8
+	requestResults := make(chan string)
+	requestBatch := make(chan int, batchSize)
+
+	start = time.Now()
 
 	for i := 0; i < total; i++ {
-		go concurrentCreate("Jason", 25, "m", requests)
-		println("next")
+		go func(index int) {
+			requestBatch <- index
+			personID, _ := requestCreate("Jason", index, "m", false)
+			<-requestBatch
+			requestResults <- personID
+		}(i)
 	}
 
 	for i := 0; i < total; i++ {
-		println(<-requests)
+		<-requestResults
 	}
+
+	elapsed = time.Since(start)
+	fmt.Printf("goroutine %d requests took %s\n", total, elapsed)
 
 	requestCount()
 
 }
 
-func concurrentCreate(name string, age int, gender string, ch chan<- string) {
-	personID, _ := requestCreate("Jason", 25, "m")
-	ch <- personID
-}
-
-func requestCreate(name string, age int, gender string) (string, error) {
+func requestCreate(name string, age int, gender string, verbose bool) (string, error) {
 	jsonData := map[string]interface{}{"name": name, "age": age, "gender": gender}
 	jsonValue, _ := json.Marshal(jsonData)
 
@@ -63,7 +84,9 @@ func requestCreate(name string, age int, gender string) (string, error) {
 	data, _ := ioutil.ReadAll(response.Body)
 	result := make(map[string]string)
 	err = json.Unmarshal(data, &result)
-	println("Create: " + result["msg"])
+	if verbose {
+		println("Create: " + result["msg"])
+	}
 	return result["msg"], nil
 
 }
@@ -129,5 +152,15 @@ func requestDelete(pID string) error {
 	result := make(map[string]string)
 	err = json.Unmarshal(data, &result)
 	println("Delete: " + result["msg"])
+	return nil
+}
+
+func requestDeleteAll() error {
+	_, err := http.Get(APIDeleteAll)
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+		return errors.New("Request fail")
+	}
+	fmt.Printf("Delete all persons success!\n")
 	return nil
 }

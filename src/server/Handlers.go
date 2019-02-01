@@ -27,7 +27,6 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 
 	db := GetDb()
 	newID := db.Insert(person)
-	db.PrintAll()
 
 	w.Write(msgOk(newID))
 
@@ -54,6 +53,7 @@ func ReadAllPerson(w http.ResponseWriter, r *http.Request) {
 
 func CountAllPerson(w http.ResponseWriter, r *http.Request) {
 	db := GetDb()
+	db.PrintAll()
 	persons := db.ReadAll()
 
 	var res = map[string]interface{}{"status": "success!", "msg": len(persons)}
@@ -99,6 +99,11 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(msgErr("ID not exist!"))
+}
+
+func DeleteAllPerson(w http.ResponseWriter, r *http.Request) {
+	db := GetDb()
+	db.DeleteAll()
 }
 
 func ErrorTest(w http.ResponseWriter, r *http.Request) {
