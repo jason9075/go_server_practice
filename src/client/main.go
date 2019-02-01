@@ -29,8 +29,26 @@ func main() {
 
 	// Goroutine
 	fmt.Println("## Goroutine ##")
+	requests := make(chan string)
+
+	total := 5
+
+	for i := 0; i < total; i++ {
+		go concurrentCreate("Jason", 25, "m", requests)
+		println("next")
+	}
+
+	for i := 0; i < total; i++ {
+		println(<-requests)
+	}
+
 	requestCount()
 
+}
+
+func concurrentCreate(name string, age int, gender string, ch chan<- string) {
+	personID, _ := requestCreate("Jason", 25, "m")
+	ch <- personID
 }
 
 func requestCreate(name string, age int, gender string) (string, error) {
